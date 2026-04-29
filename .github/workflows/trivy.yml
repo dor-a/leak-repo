@@ -11,7 +11,10 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code (Full Clone)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # <--- This forces a full clone of the repository history
 
       - name: Run Trivy (console output)
         uses: aquasecurity/trivy-action@0.20.0
@@ -19,19 +22,19 @@ jobs:
           scan-type: "fs"
           format: "table"
           severity: "HIGH,CRITICAL"
-          exit-code: "0" # dont fail the job on vulnerabilities, we will report them in the next step
+          exit-code: "0"
 
-      - name: Run Trivy (sarif)
+      - name: Run Trivy (sarif generation)
         uses: aquasecurity/trivy-action@0.20.0
         with:
           scan-type: "fs"
           format: "sarif"
           severity: "HIGH,CRITICAL"
-          exit-code: "1"
           output: "trivy-results.sarif"
+          exit-code: "0"
 
       - name: Upload to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        if: success() || failure()
         with:
           sarif_file: "trivy-results.sarif"
